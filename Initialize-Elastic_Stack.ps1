@@ -55,6 +55,11 @@ function Invoke-CheckForElasticsearchStatus {
 }
 
 function Invoke-StartDocker {
+  # Check to see if Linux to set VM Max Map Count to ensure Elasticsearch can start
+  if($IsLinux) {
+    Write-Host "Linux OS detected, setting VM Max Map Count to 262144"
+    sudo sysctl -w vm.max_map_count=262144
+  }
   Write-Host "Starting up the Elastic stack with docker, please be patient as this can take over 10 minutes to download and deploy the entire stack if this is the first time you executed this step.`nOtherwise this will take just a couple of minutes."
   Set-Location .\docker
   try {
