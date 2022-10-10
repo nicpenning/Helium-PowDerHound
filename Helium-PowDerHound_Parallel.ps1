@@ -25,7 +25,100 @@ $scriptTitle = @'
 ############################################ - Core Functions for Helium-PowDerHound - Start! ############################################
 Write-Host $scriptTitle -ForegroundColor DarkMagenta
 
+#Basic needed variables
+$heliumURL = "https://api.helium.io/v1/"
+$elasticsearchURL = $configurationSettings.elasticsearchURL
+$elasticsearchAPIKey = $configurationSettings.elasticsearchAPIKey
+$kibanaURL = $configurationSettings.kibanaURL
+$indexName = "helium-enriched"
+$baseIndexName = "helium"
 
+# Check for existing .env file for setup
+# Get Elasticsearch password from .env file
+if (Test-Path .\docker\.env) {
+    #Write-Host "Docker .env file found! Which likely means you have configured docker for use. Going to extract password to perform initilization."
+    $env = Get-Content .\docker\.env
+    $regExEnv = $env | Select-String -AllMatches -Pattern "ELASTIC_PASSWORD='(.*)'"
+    $elasticsearchPassword = $regExEnv.Matches.Groups[1].Value
+    if ($elasticsearchPassword) {
+    #Write-Host "Password for user elastic has been found and will be used." -ForegroundColor Green
+    $elasticsearchPasswordSecure = ConvertTo-SecureString -String "$elasticsearchPassword" -AsPlainText -Force
+    $elasticCreds = New-Object System.Management.Automation.PSCredential -ArgumentList "elastic", $elasticsearchPasswordSecure
+    }
+} else {
+    Write-Host "No .env file detected in \docker\.env"
+}
+
+# Configure Elasticsearch credentials for creating the Elasticsearch ingest pipelines and importing saved objects into Kibana.
+# Force usage of elastic user by trying genereated creds first, then manual credential harvest
+if ($elasticCreds) {
+    #Write-Host "Generated credentials detected! Going to use those for the setup process." -ForegroundColor Blue
+} else {
+    Write-Host "No generated credentials were found! Going to need the password for the elastic user." -ForegroundColor Yellow
+    # When no passwords were generated, then prompt for credentials
+    $elasticCreds = Get-Credential elastic
+}
+
+# Set passwords via automated configuration or manual input
+# Base64 Encoded elastic:secure_password for Kibana auth
+$elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
+$kibanaAuth = "Basic $elasticCredsBase64"
+
+function Invoke-HeliumAPIRequest {
+    param (
+        $uri,
+        $method,
+        $cursor
+    )
+    
+    $requestAttempts = 1
+    $maxAttempts = 50
+    $ErrorActionPreferenceToRestore = $ErrorActionPreference
+    $ErrorActionPreference = "Stop"
+
+    $result = ''
+    do {
+        try{
+            if ($cursor) {
+                $cursor = @{"cursor" = "$cursor"}
+                $result = Invoke-RestMethod -Uri $heliumURL$uri -Method $method -body $cursor
+            } else {
+                $result = Invoke-RestMethod -Uri $heliumURL$uri -Method $method
+            }
+        
+        }catch {
+            Write-Debug $_.Exception
+            Write-Debug "Could not fetch data, trying again. $uri"
+            if($result){Write-Host "Something is wrong. Result = "$result -ForegroundColor Yellow}
+            #Store current cursor in $cursor value to be re-used.
+            if($cursor){
+                if($result){Write-Host "Something is wrong. Result = "$result -ForegroundColor Yellow}
+                $cursor = $($cursor.cursor)
+            }
+            $requestAttempts++
+        }
+        
+        #Retrying scripts for calls that will do exponential backoff when the script fails to return data from an API call. 
+        #This will better handle 429 error codes which denote too many requests. This function will backoff exponentially
+        #after each unsuccessful call then reset to 0 after a successful API call.
+
+        if (($requestAttempts -le $maxAttempts) -and ($null -eq $result)) {
+            $retryDelaySeconds = [math]::Pow(2, $requestAttempts)
+            $retryDelaySeconds = $retryDelaySeconds - 1  # Exponential Backoff Max == (2^n)-1
+            Write-Host("API request failed. Waiting " + $retryDelaySeconds + " milliseconds before attempt " + $requestAttempts + " of " + $maxAttempts + ".")
+            Start-Sleep -Milliseconds $retryDelaySeconds            
+        } elseif(($requestAttempts -gt $maxAttempts) -and ($null -eq $result)) {
+            $ErrorActionPreference = $ErrorActionPreferenceToRestore
+            Write-Host "Tried to many times to get data, pausing to allow for investigating."
+            Write-Error $_.Exception.Message
+            Pause
+        }else{
+            Write-Debug "Data successfully retrieved!"
+        }
+    } until ($result)
+
+    return $result
+}
 
 #Store the results into Elasticsearch
 function Import-ToElasticsearch {
@@ -77,7 +170,15 @@ function Import-ToElasticsearch_Bulk {
     return $ingest
 }
 
+#Retrieve and Build the JSON Object from the request
+function Get-DataFromAPI {
+    $data = Invoke-HeliumAPIRequest $uri $method $cursor
+    $data | Add-Member -NotePropertyMembers @{source=$uri} -Force
 
+    $jsonBody = $data | ConvertTo-Json -Depth 50
+    $data = $null
+    return $jsonBody
+}
 
 #Import custom index patterns for Kibana that provides special formatting and HNT to USD conversions
 function Import-IndexPattern {
@@ -195,7 +296,7 @@ function Get-HotspotRewards {
     $rewardsInfo = @()
     $hotspotCount = 0
     $addresses | Foreach-object -Parallel {
-        Write-Host "Send hotspots address $_ to get ingested."
+        Write-Host "Sending hotspot address $_ to get ingested."
         #Write-Host "On hotspot number $hotspotCount | $percentComplete% complete"
         pwsh -c {
         
