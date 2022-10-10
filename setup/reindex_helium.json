@@ -1,0 +1,11 @@
+{
+    "conflicts": "proceed", 
+    "source": {
+      "index": "helium"
+    },
+    "dest": {
+      "index": "helium-enriched",
+      "pipeline": "$pipelineName",
+      "op_type": "create"
+    }
+  }

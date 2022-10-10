@@ -1,0 +1,209 @@
+{
+  "description": "This pipeline is designed to make the Helium dataset even better!",
+  "processors": [
+    {
+      "set": {
+        "field": "event.original",
+        "value": "{{_source}}",
+        "ignore_empty_value": true,
+        "tag": "1"
+      }
+    },
+    {
+      "set": {
+        "field": "@timestamp",
+        "value": "{{timestamp_added}}",
+        "ignore_empty_value": true,
+        "if": "String timestamp = \"@timestamp\";\r\nctx?.timestamp == null",
+        "tag": "2"
+      }
+    },
+    {
+      "rename": {
+        "field": "timestamp_added",
+        "target_field": "helium.timestamp_added",
+        "ignore_missing": true,
+        "tag": "3"
+      }
+    },
+    {
+      "set": {
+        "field": "@timestamp",
+        "value": "{{timestamp}}",
+        "ignore_empty_value": true,
+        "if": "ctx?.timestamp != null",
+        "tag": "4"
+      }
+    },
+    {
+      "rename": {
+        "field": "timestamp",
+        "target_field": "helium.timestamp",
+        "ignore_missing": true,
+        "tag": "5"
+      }
+    },
+    {
+      "set": {
+        "field": "data",
+        "value": "helium",
+        "ignore_empty_value": true,
+        "tag": "6"
+      }
+    },
+    {
+      "set": {
+        "field": "event.ingested",
+        "value": "{{_ingest.timestamp}}",
+        "ignore_empty_value": true,
+        "if": "ctx?.event?.ingested == null",
+        "tag": "7"
+      }
+    },
+    {
+      "script": {
+        "source": "float amount = ctx['amount'];\r\nfloat htn = amount / 100000000;\r\nctx['amount_hnt'] = htn;",
+        "if": "ctx?.amount != null;",
+        "tag": "8",
+        "description": "Convert HNT price to human readable format"
+      }
+    },
+    {
+      "script": {
+        "source": "float price = ctx.helium.price;\r\nfloat price_human_readable = price / 100000000;\r\nctx['oracle_price'] = price_human_readable;",
+        "if": "ctx.helium?.price != null;",
+        "tag": "9",
+        "description": "Convert Oracle price to human readable format"
+      }
+    },
+    {
+      "set": {
+        "field": "helium.hotspot_address",
+        "value": "{{address}}",
+        "override": false,
+        "ignore_empty_value": true,
+        "if": "ctx?.address != null",
+        "tag": "10"
+      }
+    },
+    {
+      "set": {
+        "field": "helium.hotspot_address",
+        "value": "{{gateway}}",
+        "override": false,
+        "ignore_empty_value": true,
+        "if": "ctx?.gateway != null",
+        "tag": "11"
+      }
+    },
+    {
+      "set": {
+        "field": "helium.wallet",
+        "value": "{{owner}}",
+        "override": false,
+        "ignore_empty_value": true,
+        "if": "ctx?.owner != null",
+        "tag": "12"
+      }
+    },
+    {
+      "set": {
+        "field": "helium.wallet",
+        "value": "{{account}}",
+        "override": false,
+        "ignore_empty_value": true,
+        "if": "ctx?.account != null",
+        "tag": "13"
+      }
+    },
+    {
+      "enrich": {
+        "field": "helium.hotspot_address",
+        "policy_name": "enrich_hotspot_name_and_geo_location",
+        "target_field": "enrich",
+        "ignore_missing": true,
+        "if": "ctx?.name == null && ctx?.geo?.location == null && ctx?.helium?.hotspot_address != null",
+        "tag": "14"
+      }
+    },
+    {
+      "set": {
+        "field": "lat",
+        "value": "{{enrich.lat}}",
+        "ignore_empty_value": true,
+        "if": "ctx?.enrich?.lat != null",
+        "tag": "15"
+      }
+    },
+    {
+      "set": {
+        "field": "lng",
+        "value": "{{enrich.lng}}",
+        "ignore_empty_value": true,
+        "if": "ctx?.enrich?.lng != null",
+        "tag": "16"
+      }
+    },
+    {
+      "set": {
+        "field": "geo.location",
+        "value": "{{lat}},{{lng}}",
+        "ignore_empty_value": true,
+        "if": "ctx?.lat != null || ctx?.lng != null",
+        "tag": "17"
+      }
+    },
+    {
+      "script": {
+        "source": "List custom_addresses = [\n $finalFormatting];\ndef hotspot_address = ctx.helium.hotspot_address;\n\nif (custom_addresses.contains(hotspot_address)) {\n  ctx['tag'] = '$tag';\n}\n",
+        "if": "ctx?.helium?.hotspot_address != null;",
+        "tag": "18",
+        "description": "Tag all hotspots with custom tag"
+      }
+    },
+    {
+      "set": {
+        "field": "name",
+        "value": "{{enrich.name}}",
+        "ignore_empty_value": true,
+        "if": "ctx?.name == null",
+        "tag": "19"
+      }
+    },
+    {
+      "remove": {
+        "field": [
+          "lat",
+          "lng",
+          "enrich.address",
+          "enrich"
+        ],
+        "ignore_missing": true,
+        "tag": "20"
+      }
+    },
+    {
+      "fingerprint": {
+        "fields": [
+          "@timestamp",
+          "hash",
+          "amount",
+          "helium.hotspot_address"
+        ],
+        "target_field": "_id",
+        "if": "ctx?.amount != null",
+        "tag": "21"
+      }
+    }
+  ],
+  "on_failure": [
+    {
+      "set": {
+        "field": "error.message",
+        "value": "Processor {{ _ingest.on_failure_processor_type }} with tag {{ _ingest.on_failure_processor_tag }} in pipeline {{ _ingest.on_failure_pipeline }} failed with message {{ _ingest.on_failure_message }}",
+        "ignore_empty_value": true,
+        "tag": "22"
+      }
+    }
+  ]
+}

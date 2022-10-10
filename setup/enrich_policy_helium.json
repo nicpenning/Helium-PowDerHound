@@ -1,0 +1,11 @@
+{
+    "match": {
+      "indices": "helium",
+      "match_field": "address",
+      "enrich_fields": [
+      "name",
+      "lat",
+      "lng"
+      ]
+    }
+  }

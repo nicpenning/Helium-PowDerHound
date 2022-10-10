@@ -1,0 +1,255 @@
+{
+    "template": {
+      "settings": {
+        "index": {
+          "number_of_replicas": "0"
+        }
+      },
+      "mappings": {
+        "dynamic_templates": [],
+        "properties": {
+          "@timestamp": {
+            "index": true,
+            "ignore_malformed": false,
+            "store": false,
+            "type": "date",
+            "doc_values": true
+          },
+          "address": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "ignore_above": 256,
+                "type": "keyword"
+              }
+            }
+          },
+          "block": {
+            "type": "long"
+          },
+          "block_added": {
+            "type": "long"
+          },
+          "elevation": {
+            "type": "long"
+          },
+          "gain": {
+            "type": "long"
+          },
+          "geo": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "ignore_malformed": false,
+                "type": "geo_point",
+                "ignore_z_value": true
+              }
+            }
+          },
+          "geocode": {
+            "type": "object",
+            "properties": {
+              "city_id": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                  }
+                }
+              },
+              "long_city": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                  }
+                }
+              },
+              "long_country": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                  }
+                }
+              },
+              "long_state": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                  }
+                }
+              },
+              "long_street": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                  }
+                }
+              },
+              "short_city": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                  }
+                }
+              },
+              "short_country": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                  }
+                }
+              },
+              "short_state": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                  }
+                }
+              },
+              "short_street": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                  }
+                }
+              }
+            }
+          },
+          "last_change_block": {
+            "type": "long"
+          },
+          "last_poc_challenge": {
+            "type": "long"
+          },
+          "lat": {
+            "type": "float"
+          },
+          "lng": {
+            "type": "float"
+          },
+          "location": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "ignore_above": 256,
+                "type": "keyword"
+              }
+            }
+          },
+          "location_hex": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "ignore_above": 256,
+                "type": "keyword"
+              }
+            }
+          },
+          "mode": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "ignore_above": 256,
+                "type": "keyword"
+              }
+            }
+          },
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "ignore_above": 256,
+                "type": "keyword"
+              }
+            }
+          },
+          "nonce": {
+            "type": "long"
+          },
+          "owner": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "ignore_above": 256,
+                "type": "keyword"
+              }
+            }
+          },
+          "payer": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "ignore_above": 256,
+                "type": "keyword"
+              }
+            }
+          },
+          "reward_scale": {
+            "type": "float"
+          },
+          "source": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "ignore_above": 256,
+                "type": "keyword"
+              }
+            }
+          },
+          "status": {
+            "type": "object",
+            "properties": {
+              "height": {
+                "type": "long"
+              },
+              "listen_addrs": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                  }
+                }
+              },
+              "online": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                  }
+                }
+              },
+              "timestamp": {
+                "type": "date"
+              }
+            }
+          },
+          "timestamp_added": {
+            "type": "date"
+          }
+        }
+      }
+    },
+    "index_patterns": [
+      "helium-enriched",
+      "helium"
+    ]
+  }
