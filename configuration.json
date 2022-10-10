@@ -1,0 +1,9 @@
+{
+    "elasticsearchURL" : "https://localhost:9200",
+    "elasticsearchAPIKey" : "",
+    "kibanaURL" : "http://localhost:5601",
+    "tag" : "Awesome_Hotspots",
+    "hotspotFileLocation" : "hotspots.txt",
+    "walletFileLocation" : "wallets.txt",
+    "initializedElasticStack" : "false"
+}
