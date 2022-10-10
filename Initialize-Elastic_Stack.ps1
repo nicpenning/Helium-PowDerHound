@@ -63,13 +63,25 @@ function Invoke-StartDocker {
   Write-Host "Starting up the Elastic stack with docker, please be patient as this can take over 10 minutes to download and deploy the entire stack if this is the first time you executed this step.`nOtherwise this will take just a couple of minutes."
   Set-Location .\docker
   try {
-    docker compose up &
+    $composeVersion = docker compose version
+    if($composeVersion){
+      Write-Debug '"docker compose detected"'
+      docker compose up &
+    }else{
+      Throw '"docker compose" not detected, will now check for docker-compose'
+    }
   } catch {
-    "docker compose up failed - trying docker-compose up"
+    Write-Debug "docker compose up failed - trying docker-compose up"
     try {
-      docker-compose up &
+      $dockerComposeVersion = docker-compose version
+      if($dockerComposeVersion){
+        Write-Debug '"docker-compose detected"'
+        docker-compose up &
+      }else{
+        Throw '"docker-compose" not detected.'
+      }
     } catch {
-      Write-Host "docker compose up or docker-compose up did not work. Check that you have dockerand docker composed installed."
+      Write-Host "docker compose up or docker-compose up did not work. Check that you have docker and docker composed installed."
     }
   }
   Set-Location ..\
