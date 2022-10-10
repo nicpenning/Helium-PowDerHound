@@ -1,0 +1,22 @@
+{
+    "name": "helium-powderhound",
+    "role_descriptors": {
+      "helium_import": {
+        "index": [
+          {
+            "names": [
+              "helium",
+              "helium-enriched"
+            ],
+            "privileges": [
+              "write",
+              "create",
+              "read",
+              "index",
+              "create_index"
+            ]
+          }
+        ]
+      }
+    }
+  }
