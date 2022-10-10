@@ -212,6 +212,165 @@ function Import-IndexPattern {
 
 ############################################ - Core Functions for Helium-PowDerHound - End! - ############################################
 
+# All Endpoints copied from the left hand side of this page: https://docs.helium.com/api/blockchain/introduction/
+$endpoints = @"
+Stats
+Blocks
+Accounts
+Validators
+Hotspots
+Cities
+Locations
+Transactions
+Pending Transactions
+Oracle Prices
+Chain Variables
+OUIs
+Rewards
+DC Burns
+State Channels
+Assert Locations
+"@
+
+# Magical RegEx to find all the right things from the API Docs
+$regExForAPIs = '<h2 id=".*">(.*)<\/h2><pre><code>((.*) https:\/\/api\.helium\.io\/v1\/(.*))\n<\/code><\/pre>'
+$regExForParameter = '\/:([a-z]*)|:([a-z]*)|:([a-z]*):([a-z]*)\/.*:([a-z]*)'
+$regExForSearchTerm = '\?(.*)=(.*)'
+
+# Basic text formating object that is really unecessary but the OCD was kicking
+$TextInfo = (Get-Culture).TextInfo
+
+# Fetch the the latest API calls!
+function Get-LatestDocumentation {
+    param (
+        $endpointCategory
+    )
+    $apiDocumenationURL = "https://docs.helium.com/api/blockchain/$endpointCategory/"
+    try{
+        $apiFetch = Invoke-WebRequest $apiDocumenationURL -UseBasicParsing
+    } catch{
+        #Temp Bug Fix for inconsitent URL (- vs _)
+        $endpointCategory = $endpointCategory.Replace("_","-")
+        $apiDocumenationURL = "https://docs.helium.com/api/blockchain/$endpointCategory/"
+        $apiFetch = Invoke-WebRequest $apiDocumenationURL -UseBasicParsing
+    }
+    BuildMyScript $endpointCategory $apiFetch
+}
+
+# Build out all of the code based on the data that was fetched from the API docs, it just need the endpoint category and 
+function BuildMyScript {
+    param (
+        $endpointCategory,
+        $apiFetch
+    )
+    $allParameters = ""
+    $apiFound = $apiFetch.Content | Select-String -Pattern $regExForAPIs -AllMatches
+
+    $apiFound.Matches | ForEach-Object {
+        $title = $_.Groups[1].Value
+        $comment = $_.Groups[2].Value.Replace('&lt;','<').Replace('&gt;','>')
+        $requestType = $TextInfo.ToTitleCase($_.Groups[3].Value.ToLower())
+        $uriEndpoint = $_.Groups[4].Value.Replace('&lt;','<').Replace('&gt;','>')
+
+        $functionName = $title.Replace(" ","_")
+        $parentEndpoint = $TextInfo.ToTitleCase($endpointCategory.ToLower()).Replace(" ","_")
+        if(($uriEndpoint -match $regExForParameter) -or ($uriEndpoint -match $regExForSearchTerm)) { 
+            $paramFound = $uriEndpoint | Select-String -Pattern $regExForParameter -AllMatches
+            if($paramFound){
+                $requiredParameters += if($paramFound.Matches.Groups[1].Value -ne ""){"`n`t`t"+'$'+$paramFound.Matches.Groups[1].Value}else{$null}
+                $requiredParameters += if($paramFound.Matches.Groups[2].Value -ne ""){"`n`t`t"+'$'+$paramFound.Matches.Groups[2].Value}else{$null}
+                $requiredParameters += if($paramFound.Matches.Groups[3].Value -ne ""){"`n`t`t"+'$'+$paramFound.Matches.Groups[3].Value}else{$null}    
+                $uriEndpoint = $($uriEndpoint.Replace(':','$'))
+            }else{$null}
+            
+            $searchTermFound = $uriEndpoint | Select-String -Pattern $regExForSearchTerm -AllMatches
+            $searchParam = if($searchTermFound){$($searchTermFound.Matches.groups[2].value).Replace('<','').Replace('>','')}else{$null}
+            if($searchParam) {
+                $requiredParameters += "`n`t"+'$'+$searchParam
+                $uriEndpoint = $($uriEndpoint.Replace('<','$')).Replace('>','')
+            }else{$null}
+            
+            #Add optional path query and cursor parameters for large data sets.
+            $requiredParameters += ",`n`t`t"+'$query'+",`n`t`t"+'$cursor'
+
+            $allParameters = "param (`t$requiredParameters`n`t)"
+            $requiredParameters = ''
+        }else{
+            #Add optional cursor parameter for large data sets.
+            $requiredParameters = "`n`t`t"+'$cursor'
+            $allParameters = "param (`t$requiredParameters`n`t)"
+            $requiredParameters = ''
+            #Write-Host "No required parameters found for this API request so just adding cursor pagination parameter." -ForegroundColor Blue
+        }
+
+$allFunctions += @"
+
+#$title
+#$comment
+function Invoke-Helium-$parentEndpoint-$functionName {
+    $allParameters
+    `$method = "$requestType"
+    `$uri = "$uriEndpoint`$query"
+    `$cursor = "`$cursor"
+    return Get-DataFromAPI
+}
+    
+"@
+    
+    }
+    return $allFunctions
+}
+
+# This will generate a file called bones.ps1 that will contain all the bones (API calls) that were fetched
+# and their respective required parameters if necessary
+function FetchBones {
+    #Check to see if the bones (latest code) has been fetched or not then too them out if they are found.
+    if((Test-Path bones.ps1) -eq "true") {
+        Write-Host "Old bones.ps1 was found, removing this for a a new set of bones!" -ForegroundColor Yellow
+        Remove-Item bones.ps1 
+    }
+
+    $endpoints.Split("`n") | ForEach-Object {
+        $currentEndpoint = $_.ToLower().Replace(" ","_")
+        Write-Host "Getting latest API calls from $heliumURL and creating PowerShell Functions! Currently retrieving: $currentEndpoint"  
+        Write-Host "Fetching new bone.ps1!" -ForegroundColor Blue
+        try{
+            Get-LatestDocumentation $currentEndpoint | Out-File bones.ps1 -Append
+            Write-Debug "Bone fetched. Good boy!"
+            $goodBoy = @'
+                     ,-~~~~-,
+               .-~~~;        ;~~~-.
+              /    /          \    \
+             {   .'{  O    O  }'.   }
+              `~`  { .-~~~~-. }  `~`
+                   ;/        \;
+                  /'._  ()  _.'\
+                 /    `~~~~`    \
+                ;                ;
+                {                }
+                {     }    {     }
+                {     }    {     }
+                /     \    /     \
+               { { {   }~~{   } } }
+           jgs  `~~~~~`    `~~~~~`
+                   (`"======="`)
+                   (_.=======._)
+'@
+            Write-Debug $goodBoy
+        } catch {
+            Write-Host "The poor hound couldn't retrieve the bones. :("
+            $_
+        }
+    }
+}
+
+#FetchBones
+
+# Once bones.ps1 has been created you can simply use the import-module bones.ps1 to load all of the API calls to use. Have fun!
+#Import-Module ./bones.ps1
+
+# Now you may begin fetching some data and storing into Elasticsearch (or other JSON document store!)
+
 # Use case #1: Ingest all hostspots across the globe! This is useful for metadata such as the hotspot name and geolocation info.
 function Get-AllHotspots {
 
