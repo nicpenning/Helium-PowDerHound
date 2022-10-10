@@ -233,8 +233,8 @@ Assert Locations
 "@
 
 # Magical RegEx to find all the right things from the API Docs
-$regExForAPIs = '<h2 id=".*">(.*)<\/h2><pre><code>((.*) https:\/\/api\.helium\.io\/v1\/(.*))\n<\/code><\/pre>'
-$regExForParameter = '\/:([a-z]*)|:([a-z]*)|:([a-z]*):([a-z]*)\/.*:([a-z]*)'
+$regExForAPIs = '<h2 class=".*?" id=".*?">(.*?)<a.*?<\/h2>[\s\S]*?<span class="token plain">((.*?) https:\/\/api.helium.io\/v1\/(.*?))<\/span>'
+$regExForParameter = '\/:([a-z3_]*)|:([a-z3_]*)|:([a-z3_]*):([a-z3_]*)\/.*:([a-z3_]*)'
 $regExForSearchTerm = '\?(.*)=(.*)'
 
 # Basic text formating object that is really unecessary but the OCD was kicking
