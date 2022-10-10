@@ -10,7 +10,7 @@ function Invoke-CheckForEnv {
     $global:elasticsearchPassword = $regExEnv.Matches.Groups[1].Value
     if ($elasticsearchPassword) {
       Write-Host "Password for user elastic has been found and will be used." -ForegroundColor Green
-      return "True"
+      return "True", $elasticsearchPassword
     }
   } else {
     Write-Debug "No .env file detected in \docker\.env"
