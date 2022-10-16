@@ -45,6 +45,7 @@ Requirements:
  - Elasticsearch v8.4+ (with permissions to index docs and create ingest pipelines)
  - Kibana v8.4+ (with permissions to import saved objects)
  - Access to https://api.helium.io and https://www.binance.us
+ - 4 GB+ RAM free* (when using the project's docker implementation)
 
 ** Docker and Docker Compose (If you don't have an Elastic stack today, build one via containers!)
 
@@ -72,7 +73,7 @@ Helium-PowDerHound
 |   configuration.json ( Used for the configuration of this project. The defaults will work with this project but are configurable for your own Elatic stack if you choose not to have this tool build your stack.)
 |   bones.ps1 ( A special file that gets genereated when the Intilize-Elastic_Stack.ps1 script is executed (Althought the code is found in Helium-PowDerHound.ps1). It contains the necessary API calls needed to interact with api.helium.io which can be used for custom use cases. )
 └───docker
-│   │   .env_template ( A docker template for those that don't have the Elastic stack and want this project to build and maintain it for them. )
+│   │   .env_template ( A docker template for those that don't have the Elastic stack and want this project to build and maintain it for them. Note that the amount of free RAM for memory must be at least 4GB since that is what the project sets MEM_LIMIT to for default. Increase or decrease this for your needs. )
 │   │   docker-compose.yml ( A docker compose file to layout all the necessary parts of the Elastic stack to get it up and running. )
 │   
 └───setup
