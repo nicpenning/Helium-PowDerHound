@@ -386,7 +386,7 @@ Write-Host "`nNote: Don't be alarmed if some of the visualizations are not popul
 Write-Host "If you have over 900,000 Total Hotspots, congratulations! It is time to start ingesting rewards data!`nStart by running ./Rewards_Hourly_Ingest.ps1" -ForegroundColor Green
 
 $runHourly = Read-Host "Would you like to start the hourly ingest by ingesting data for $($addresses.count) hotspots?`
-1. Yes please! Starting ingesting! `
+1. Yes please! Start ingesting! `
 2. No thank you. I will run that script later. `
 Please Choose (1 or 2)"
 if ($runHourly -eq 1) {
