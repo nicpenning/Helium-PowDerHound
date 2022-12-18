@@ -53,14 +53,15 @@ Requirements:
 ** Docker and Docker Compose (If you don't have an Elastic stack today, build one via containers!)
 
 1.	Clone this repo.
+`git clone https://github.com/nicpenning/Helium-PowDerHound.git`
+If you don't have git then click Code above in the right hand corner of this page and then click Download zip. 
+Then extract to a directory of your choosing. 
 2.	Initialize your Elastic Stack (Docker Files Included if you don't have Elasticsearch setup today).
-3.	Execute code to start ingesting Helium Data
-4.	After geting the basics down, customize your experience by supplying your own wallets.txt or hotspots.txt file.
+ Navigate to the root directory for Helium-PowDerHound and run `.\Initialize-Elastic_Stack.ps1` and follow the wizard. 
+3.	Execute code to start ingesting Helium Data (This happens automatically after the initialization but can be started again by navigating to the root directory and running `.\Rewards_Hourly_Ingest.ps1`
+4.	After geting the basics down, customize your experience by supplying your own wallets.txt or hotspots.txt file. This can be done by repeating step 2, which is running `.\Initialize-Elastic_Stack.ps1` 
 
-** If using docker: Navigate to \PowDerHound\docker and run: 
-```docker-compose up```
-
-** If running on Linux/Unix, you may need to increase the vm.max_map_count setting from the default (65530) which is too low:
+** If running Elasticsearch on Linux/Unix, you may need to increase the vm.max_map_count setting from the default (65530) which is too low:
 ```sudo sysctl -w vm.max_map_count=262144```
 
 # What's in the box? (🔋 Batteries Included!)
