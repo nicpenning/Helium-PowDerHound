@@ -74,8 +74,6 @@ Requirements:
 
      `.\Initialize-Elastic_Stack.ps1` 
 
-** If running Elasticsearch on Linux/Unix, you may need to increase the vm.max_map_count setting from the default (65530) which is too low:
-```sudo sysctl -w vm.max_map_count=262144```
 
 # What's in the box? (🔋 Batteries Included!)
 
