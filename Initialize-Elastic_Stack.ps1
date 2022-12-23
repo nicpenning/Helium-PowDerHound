@@ -60,6 +60,37 @@ function Invoke-StartDocker {
     Write-Host "Linux OS detected, setting VM Max Map Count to 262144"
     sudo sysctl -w vm.max_map_count=262144
   }
+  
+  #Check to see if Docker on Windows
+  if($IsWindows) {
+    $dockerWSL2 = docker info | Select-String "WSL2"
+
+    #Check to see if Docker on Windows is using WSL2 and configure accordingly
+    if($dockerWSL2){
+      Write-Host "Docker install was detected using WSL2, so an additional setting needs to be configured for memory consumption."
+      $wslMaxMem = Read-Host "The following file will be created: "$ENV:USERPROFILE\.wslconfig" `nWould you like to continue?`n1. Yes`n2. No, exit`n(Enter 1 or 2)"
+      if($wslMaxMem -eq 1){
+        $maxmem = @"
+[wsl2]
+kernelCommandLine = "sysctl.vm.max_map_count=262144"
+"@
+        Write-Host "Creating file $ENV:USERPROFILE\.wslconfig with the contents of:$maxmem"
+        try{
+          $maxmem | Out-File "$ENV:USERPROFILE\.wslconfig"
+          Write-Host "File created!" -ForegroundColor Green
+        }catch{
+          Write-Host "File could not be created." -ForegroundColor Red
+        }
+      }else{
+        Write-Host "Required WSL file was not created, exiting."
+        Exit
+      }
+    }else{
+      Write-Host "Docker install was not detected using WSL2 so you might need to adjust your docker settings to allow additional RAM usage for this setup to work."
+      Write-Host "If Elasticsearch never gets working then check your Docker containers to see if they exited and if so, check the logs and see why the failed and fix accordingly."
+    }
+  }
+  
   Write-Host "Starting up the Elastic stack with docker, please be patient as this can take over 10 minutes to download and deploy the entire stack if this is the first time you executed this step.`nOtherwise this will take just a couple of minutes."
   Set-Location .\docker
   try {
