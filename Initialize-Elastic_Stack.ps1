@@ -252,30 +252,45 @@ $addressesOrWallets = Read-Host "Currently, you can either use a list of hotspot
 Please Choose (1 or 2)"
 
 if($addressesOrWallets -eq 1){
-  # Get all wallet addresses from a text file
-  Write-Host "Getting all wallet addresses fom a text file." -ForegroundColor Blue
-  try{
-    $addresses = Get-Content $walletFileLocation
-    Export-Hotspots_from_Wallets $addresses
-    Write-Host "Wallets added: $($addresses.count)"
-    $addresses = Get-Content './hotspots.txt'
-    Write-Host "Using automatically generated hotspots.txt file for ingest which has $($addresses.count) hotspots." -ForegroundColor Green
-  
-  }catch{
-    Write-Host "Could not find wallet addresses in file. Exiting" -ForegroundColor Yellow
+  # Check for wallets.text
+  $walletsTxtExist = Test-Path wallets.txt
+  if($walletsTxtExist){
+    # Get all wallet addresses from a text file
+    Write-Host "Getting all wallet addresses fom a text file." -ForegroundColor Blue
+    try{
+      $addresses = Get-Content $walletFileLocation
+      Export-Hotspots_from_Wallets $addresses
+      Write-Host "Wallets added: $($addresses.count)"
+      $addresses = Get-Content './hotspots.txt'
+      Write-Host "Using automatically generated hotspots.txt file for ingest which has $($addresses.count) hotspots." -ForegroundColor Green
+    
+    }catch{
+      Write-Host "Could not find wallet addresses in file. Exiting" -ForegroundColor Yellow
+      Exit
+    }
+  }else{
+    Write-Host "wallets.txt file does not exist, please create that now in: `n$pwd\"
+    Write-Host "After you created your wallets.txt file with your wallets in it with each wallet address on a new line, just restart PowerShell and restart this script"
     Exit
   }
 } elseif ($addressesOrWallets -eq 2) {
-  # Get all hotspot addresses from a text file
-  Write-Host "Getting all hotspot addresses fom a text file." -ForegroundColor Blue
-  try{
-    $addresses = Get-Content './hotspots.txt'
-    Write-Host "Hotspots found: $($addresses.count)" -ForegroundColor DarkGreen
-  }catch{
-    Write-Host "Could not find hotspot addresses in file. Exiting" -ForegroundColor Yellow
+  # Check for hostpots.text
+  $hotspotsTxtExist = Test-Path hotspots.txt
+  if($hotspotsTxtExist){
+    # Get all hotspot addresses from a text file
+    Write-Host "Getting all hotspot addresses fom a text file." -ForegroundColor Blue
+    try{
+      $addresses = Get-Content './hotspots.txt'
+      Write-Host "Hotspots found: $($addresses.count)" -ForegroundColor DarkGreen
+    }catch{
+      Write-Host "Could not find hotspot addresses in file. Exiting" -ForegroundColor Yellow
+      Exit
+    }
+  }else{
+    Write-Host "hotspots.txt file does not exist, please create that now in: `n$pwd\"
+    Write-Host "After you created your hotspots.txt file with your hotspots in it with each hotspot address on a new line, just restart PowerShell and restart this script"
     Exit
   }
-  
 }else{
   Write-Host "Not a valid option. Exiting"
   exit
