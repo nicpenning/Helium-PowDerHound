@@ -460,7 +460,6 @@ function Get-HotspotRewards {
         pwsh -c {
         
             # Extract custom settings from configuration.json
-            Set-Location /home/napsta/Desktop/PowDerHound
             $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
 
             $heliumURL = "https://api.helium.io/v1/"
