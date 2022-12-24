@@ -457,11 +457,14 @@ function Get-HotspotRewards {
     $addresses | Foreach-object -Parallel {
         Write-Host "Sending hotspot address $_ to get ingested."
         #Write-Host "On hotspot number $hotspotCount | $percentComplete% complete"
-        pwsh -c {
-        
+        pwsh -Command {
+            #Place current address from arument in variable
+            $currentAddress = $Args[0]
+
+            #Set directory to script location
+            Set-Location $Args[1]
             # Extract custom settings from configuration.json
             $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
-
             $heliumURL = "https://api.helium.io/v1/"
             $elasticsearchURL = $configurationSettings.elasticsearchURL
             $elasticsearchAPIKey = $configurationSettings.elasticsearchAPIKey
@@ -472,14 +475,14 @@ function Get-HotspotRewards {
             # Check for existing .env file for setup
             # Get Elasticsearch password from .env file
             if (Test-Path .\docker\.env) {
-                #Write-Host "Docker .env file found! Which likely means you have configured docker for use. Going to extract password to perform initilization."
+                Write-Host "Docker .env file found! Which likely means you have configured docker for use. Going to extract password to perform initilization."
                 $env = Get-Content .\docker\.env
                 $regExEnv = $env | Select-String -AllMatches -Pattern "ELASTIC_PASSWORD='(.*)'"
                 $elasticsearchPassword = $regExEnv.Matches.Groups[1].Value
                 if ($elasticsearchPassword) {
-                #Write-Host "Password for user elastic has been found and will be used." -ForegroundColor Green
-                $elasticsearchPasswordSecure = ConvertTo-SecureString -String "$elasticsearchPassword" -AsPlainText -Force
-                $elasticCreds = New-Object System.Management.Automation.PSCredential -ArgumentList "elastic", $elasticsearchPasswordSecure
+                    #Write-Host "Password for user elastic has been found and will be used." -ForegroundColor Green
+                    $elasticsearchPasswordSecure = ConvertTo-SecureString -String "$elasticsearchPassword" -AsPlainText -Force
+                    $elasticCreds = New-Object System.Management.Automation.PSCredential -ArgumentList "elastic", $elasticsearchPasswordSecure
                 }
             } else {
                 Write-Host "No .env file detected in \docker\.env"
@@ -488,7 +491,7 @@ function Get-HotspotRewards {
             # Configure Elasticsearch credentials for creating the Elasticsearch ingest pipelines and importing saved objects into Kibana.
             # Force usage of elastic user by trying genereated creds first, then manual credential harvest
             if ($elasticCreds) {
-                #Write-Host "Generated credentials detected! Going to use those for the setup process." -ForegroundColor Blue
+                Write-Host "Generated credentials detected! Going to use those for the setup process." -ForegroundColor Blue
             } else {
                 Write-Host "No generated credentials were found! Going to need the password for the elastic user." -ForegroundColor Yellow
                 # When no passwords were generated, then prompt for credentials
@@ -499,7 +502,6 @@ function Get-HotspotRewards {
             # Base64 Encoded elastic:secure_password for Kibana auth
             $elasticCredsBase64 = [convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($($elasticCreds.UserName+":"+$($elasticCreds.Password | ConvertFrom-SecureString -AsPlainText)).ToString()))
             $kibanaAuth = "Basic $elasticCredsBase64"
-            $_ = $Args[0]
             Import-Module ./bones.ps1
             function Fetch-Hotspot_Rewards {
                 Param
@@ -538,7 +540,6 @@ function Get-HotspotRewards {
                 } until ($x -eq 1)
         
                 return $allData
-        
             }
 
             #Perform request to Helium's API
@@ -633,33 +634,29 @@ function Get-HotspotRewards {
                 return $ingest
             }
 
-            $min_time = "2013-11-05T14:07:15.5001260-05:00"
-            $max_time = "2022-11-05T14:07:15.5001260-05:00"
-
             $hotspotCount++;
             #Write-Host "Ingesting hotspot $hotspotCount of $($addresses.count)"
-            $rewardsInfo = Fetch-Hotspot_Rewards -address $_ -min_time $min_time -max_time $max_time
+            $rewardsInfo = Fetch-Hotspot_Rewards -address $currentAddress -min_time $min_time -max_time $max_time
             #Start-Sleep -Seconds 5
             #Sample Format: -min_time "2020-11-05T14:07:15.5001260-05:00" -max_time "2021-11-05T14:07:15.5001260-05:00"
 
             # Iterate through each object and add the source and @timestamp for indexing!
             if($rewardsInfo.data){
-            $hash = @()
-            #Write-Host "Time to ingest, please wait for this to finish, there are $($rewardsInfo.data.count) docs that need to be ingested for address: $_."
-            if($rewardsInfo.data){
-                $rewardsInfo.data | ForEach-Object {
-                    $_ | Add-Member -NotePropertyMembers @{source=$rewardsInfo.source[0]} -Force 
-                    $currentDoc = $($_ | ConvertTo-Json -Depth 4 -Compress )
-                    #$rewardsId = $_.hash
-                    $hash += "{`"index`":{`"_index`":`"$indexName`"}}`r`n$currentDoc`r`n"
-            }
-        }
+                $hash = @()
+                #Write-Host "Time to ingest, please wait for this to finish, there are $($rewardsInfo.data.count) docs that need to be ingested for address: $_."
+                if($rewardsInfo.data){
+                    $rewardsInfo.data | ForEach-Object {
+                        $_ | Add-Member -NotePropertyMembers @{source=$rewardsInfo.source[0]} -Force 
+                        $currentDoc = $($_ | ConvertTo-Json -Depth 4 -Compress )
+                        #$rewardsId = $_.hash
+                        $hash += "{`"index`":{`"_index`":`"$indexName`"}}`r`n$currentDoc`r`n"
+                    }
+                }
                 $result = Import-ToElasticsearch_Bulk_Pipeline $hash
             } else {
-                #Write-Host "No data found, not attempting to ingest for address $_"
+                Write-Host "No data found, not attempting to ingest for address $_"
             }
-        } -args $_
-
+        } -args $_ $(Get-location).path
     } -ThrottleLimit 10
 }
 
