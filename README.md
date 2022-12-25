@@ -44,13 +44,13 @@ https://user-images.githubusercontent.com/5582679/196057475-9470f86a-17ac-4c2f-9
 # Getting Started
 
 Requirements:
- - PowerShell 7.0+
+ - PowerShell 7.0+ (Install found [here](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-7.3))
  - Elasticsearch v8.4+ (with permissions to index docs and create ingest pipelines)
  - Kibana v8.4+ (with permissions to import saved objects)
  - Access to https://api.helium.io and https://www.binance.us
  - 4 GB+ RAM free* (when using the project's docker implementation)
 
-** Docker and Docker Compose (If you don't have an Elastic stack today, build one via containers!)
+** Docker and Docker Compose (If you don't have an Elastic stack today, build one via containers! Install found [here](https://docs.docker.com/get-docker/))
 
 1.	Clone this repo.
 
