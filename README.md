@@ -61,7 +61,7 @@ Requirements:
 
 
 2.	Initialize your Elastic Stack (Docker Files Included if you don't have Elasticsearch setup today).
-     Navigate to the root directory for Helium-PowDerHound and run the following from PowerShell 7:
+     In PowerShell 7, navigate to the root directory for Helium-PowDerHound and run:
  
      `Unblock-File *.ps1; .\Initialize-Elastic_Stack.ps1`
   
