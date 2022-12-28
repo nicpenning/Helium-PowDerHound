@@ -457,12 +457,10 @@ function Get-HotspotRewards {
     $addresses | Foreach-object -Parallel {
         Write-Host "Sending hotspot address $_ to get ingested."
         #Write-Host "On hotspot number $hotspotCount | $percentComplete% complete"
-        pwsh -Command {
+        pwsh -WorkingDirectory $Env:PWD -Command {
             #Place current address from arument in variable
             $currentAddress = $Args[0]
 
-            #Set directory to script location
-            Set-Location $Args[1]
             # Extract custom settings from configuration.json
             $configurationSettings = Get-Content ./configuration.json | ConvertFrom-Json
             $heliumURL = "https://api.helium.io/v1/"
@@ -634,6 +632,9 @@ function Get-HotspotRewards {
                 return $ingest
             }
 
+            $min_time = Get-Content ./checkpoint.json | ConvertFrom-Json | Get-Date -Format "o"
+            $max_time = Get-Date -Format "o"
+
             $hotspotCount++;
             #Write-Host "Ingesting hotspot $hotspotCount of $($addresses.count)"
             $rewardsInfo = Fetch-Hotspot_Rewards -address $currentAddress -min_time $min_time -max_time $max_time
@@ -656,7 +657,7 @@ function Get-HotspotRewards {
             } else {
                 Write-Host "No data found, not attempting to ingest for address $_"
             }
-        } -args $_ $(Get-location).path
+        } -args $_
     } -ThrottleLimit 10
 }
 
