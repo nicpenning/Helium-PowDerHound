@@ -1,5 +1,5 @@
 # Helium-PowDerHound
-A mulitpurpose tool to ingest Helium hotspot network data into an Elastic stack using PowerShell.
+A multipurpose tool to ingest Helium hotspot network data into an Elastic stack using PowerShell.
 ```
 #########################################################################################################################
 #  / \__                       _ _                         ___               ___                                     _   #
