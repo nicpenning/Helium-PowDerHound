@@ -457,7 +457,8 @@ function Get-HotspotRewards {
     $addresses | Foreach-object -Parallel {
         Write-Host "Sending hotspot address $_ to get ingested."
         #Write-Host "On hotspot number $hotspotCount | $percentComplete% complete"
-        pwsh -WorkingDirectory $Env:PWD -Command {
+        $projectDirectory = $(Get-Location).path
+        pwsh -WorkingDirectory $projectDirectory -Command {
             #Place current address from arument in variable
             $currentAddress = $Args[0]
 
