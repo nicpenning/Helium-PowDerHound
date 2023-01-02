@@ -5,7 +5,7 @@ $addressFileLocation = $configurationSettings.hotspotFileLocation
 # Update to the latest enrich pipeline using custom Helium Addresses from a file.
 # Check to see if the Initialize-Elastic_Stack.ps1 was run before ingesting reward data.
 if ($configurationSettings.initializedElasticStack -eq "false") {
-    Import-Module ./Initialize-Elastic-Stack.ps1 -Force
+    Import-Module ./Initialize-Elastic_Stack.ps1 -Force
 } else {
     Write-Host "Excellent, the Elastic Stack has already been prepped and is ready to ingest data." -ForegroundColor Green
 }
